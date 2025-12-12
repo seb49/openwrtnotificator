@@ -1,5 +1,8 @@
 "# openwrtnotificator" 
 
+PreRequis
+ - installer curl
+
 Etape 1 - Configurer un BOT Telegram
 
 Etape 2 - Recupérer le chatid et le token
