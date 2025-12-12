@@ -6,6 +6,8 @@ Etape 2 - Recupérer le chatid et le token
 
 Etape 3 - Stocker dans un fichier les adresses MAC, IP, hostname des devices connectés
 
+Crée le fichier /etc/hotplug.d/hostapd/10-wifi-connect-log avec ce contenu :
+
     #!/bin/sh
     # On traite les nouveaux baux et les mises à jour
     case "$ACTION" in
