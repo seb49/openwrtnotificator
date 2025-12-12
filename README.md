@@ -163,14 +163,16 @@ Puis
 
 2. Activer et tester le service
 
-    /etc/init.d/wifi-log-daemon enable    # auto au boot
-    /etc/init.d/wifi-log-daemon start     # démarrage immédiat
+   /etc/init.d/wifi-log-daemon enable
+   /etc/init.d/wifi-log-daemon start
+   
+
+   
 
 Tu peux voir son statut et les logs comme pour les autres services :
 
-text
-/etc/init.d/wifi-log-daemon status
-logread | grep wifi-client
+    /etc/init.d/wifi-log-daemon status
+    logread | grep wifi-client
 
    
 
