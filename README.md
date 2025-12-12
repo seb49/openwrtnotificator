@@ -127,3 +127,50 @@ Etaps 4 - Ecrire un script qui va lire les logs OpenWrt
 
     done
 
+
+Etape 5 Rendre le script exécutable
+
+    chmod +x /usr/sbin/wifi-log-daemon.sh
+
+Voir le résultat en One SHot 
+
+    /usr/sbin/wifi-log-daemon.sh
+
+Etape 6 Creer un script de service
+
+Créer le fichier /etc/init.d/wifi-log-daemon
+
+    #!/bin/sh /etc/rc.common
+
+    START=99
+    USE_PROCD=1
+
+    NAME=wifi-log-daemon
+    PROG=/usr/sbin/wifi-log-daemon.sh
+
+    start_service() {
+        procd_open_instance
+        procd_set_param command "$PROG"
+        procd_set_param stdout 1      # optionnel : envoie stdout vers logd
+        procd_set_param stderr 1
+        procd_set_param respawn       # redémarre si le script plante
+        procd_close_instance
+    }
+
+Puis
+
+    chmod +x /etc/init.d/wifi-log-daemon
+
+2. Activer et tester le service
+
+    /etc/init.d/wifi-log-daemon enable    # auto au boot
+    /etc/init.d/wifi-log-daemon start     # démarrage immédiat
+
+Tu peux voir son statut et les logs comme pour les autres services :
+
+text
+/etc/init.d/wifi-log-daemon status
+logread | grep wifi-client
+
+   
+
