@@ -6,36 +6,30 @@ Etape 2 - Recupérer le chatid et le token
 
 Etape 3 - Stocker dans un fichier les adresses MAC, IP, hostname des devices connectés
 
-#!/bin/sh
+    #!/bin/sh
+    # On traite les nouveaux baux et les mises à jour
+    case "$ACTION" in
+        add|update)
+            ;;
+        *)
+            exit 0
+            ;;
+    esac
 
-DB="/tmp/mac-hostname.db"
+    MAC="$MACADDR"
+    HOST="$HOSTNAME"    # ou DHCP_HOSTNAME selon ce que tu as vu dans /tmp/dhcp-debug.log
 
-logread -f | while read line; do
-    echo "$line" | grep -q "hostapd: phy" || continue
-    echo "$line" | grep -Eq "AP-STA-CONNECTED|AP-STA-DISCONNECTED" || continue
+    [ -z "$MAC" ] && exit 0
 
-    if echo "$line" | grep -q "AP-STA-CONNECTED"; then
-        EVENT="CONNECTED"
-    else
-        EVENT="DISCONNECTED"
-    fi
-
-    IFACE=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i ~ /phy[0-9]-ap[0-9]:/) {gsub(":", "", $i); print $i;}}')
-    MAC=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i=="AP-STA-CONNECTED" || $i=="AP-STA-DISCONNECTED") {print $(i+1);}}')
-
-    # Lire HOST et IP depuis la DB : format "MAC HOST IP"
-    HOST=$(grep "^$MAC " "$DB" 2>/dev/null | awk '{print $2}' | head -n1)
-    IP=$(grep "^$MAC " "$DB" 2>/dev/null | awk '{print $3}' | head -n1)
+    DB="/tmp/mac-hostname.db"
 
     [ -z "$HOST" ] && HOST="unknown"
-    [ -z "$IP" ] && IP="unknown"
 
-    if [ "$EVENT" = "CONNECTED" ]; then
-        logger -t wifi-client "Client WiFi connecté: $MAC ($HOST) IP=$IP sur $IFACE"
-    else
-        logger -t wifi-client "Client WiFi déconnecté: $MAC ($HOST) IP=$IP sur $IFACE"
-    fi
-done
+    # On remplace l’ancienne ligne pour cette MAC
+    grep -v "^$MAC " "$DB" 2>/dev/null > "$DB.tmp" || true
+    mv "$DB.tmp" "$DB" 2>/dev/null || true
+    echo "$MAC $HOST" >> "$DB"
+
 
 
 Etaps 4 - Ecrire un script qui va lire les logs OpenWrt
