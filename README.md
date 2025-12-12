@@ -11,7 +11,7 @@ Etape 3 - Stocker dans un fichier les adresses MAC, IP, hostname des devices con
 
 Principe
 OpenWrt déclenche des scripts dans /etc/hotplug.d/hostapd/ à chaque événement d’association/déassociation Wi‑Fi, en passant des variables d’environnement comme ACTION, MAC, IFNAME, etc.​
-En ajoutant un script dans ce répertoire, tu peux utiliser logger pour écrire un message personnalisé dans le log système.
+En ajoutant un script dans ce répertoire, nous allons écrire dans une base les information MAC HOST IP.
 
 Crée le fichier /etc/hotplug.d/dhcp/10-mac-hostname-db avec ce contenu :
 
@@ -54,3 +54,76 @@ Selon version d’OpenWrt, le nom exact de l’ACTION peut être AP-STA-CONNECTE
 
 
 Etaps 4 - Ecrire un script qui va lire les logs OpenWrt
+
+    #!/bin/sh
+
+    DB="/tmp/mac-hostname.db"
+
+    send_to_telegram() {
+        logger -p local0.info -t dhcp-remove-notify "$1"
+        chat_id=""
+        token=""
+        if [[ -n "${token}" ]] && [[ -n "${chat_id}" ]]; then
+            #curl -okim 10 --data disable_notification="false" --data parse_mode="MarkdownV2" --data chat_id="${chat_id}" --data-urlencode "text=${1}" "https://api.telegram.org/bot${token}/sendMessage" > /dev/null
+            curl -skim 10 --data disable_notification="false" --data parse_mode="MarkdownV2" --data chat_id="" --data-urlencode "text=${1}" "https://api.telegram.org/bot/sendMessage" > /dev/null
+        else
+            logger -p local0.info -t dhcp-remove-notify "Error: Your telegram chat_id or token is empty"
+        fi
+    }
+
+    logread -f | while read line; do
+    # On ne garde que les lignes hostapd qui contiennent l’un des deux événements
+    echo "$line" | grep -q "hostapd: phy" || continue
+    echo "$line" | grep -Eq "AP-STA-CONNECTED|AP-STA-DISCONNECTED" || continue
+
+    # Déterminer le type d’événement
+    if echo "$line" | grep -q "AP-STA-CONNECTED"; then
+        EVENT="CONNECTED"
+    else
+        EVENT="DISCONNECTED"
+    fi
+
+    # Récupérer l’interface (phyX-apY)
+    IFACE=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i ~ /phy[0-9]-ap[0-9]:/) {gsub(":", "", $i); print $i;}}')
+
+    # Récupérer la MAC (champ juste après AP-STA-CONNECTED / AP-STA-DISCONNECTED)
+    MAC=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i=="AP-STA-CONNECTED" || $i=="AP-STA-DISCONNECTED") {print $(i+1);}}')
+
+    # Lire HOST et IP depuis la DB : format "MAC HOST IP"
+    HOST=$(grep "^$MAC " "$DB" 2>/dev/null | awk '{print $2}' | head -n1)
+    IP=$(grep "^$MAC " "$DB" 2>/dev/null | awk '{print $3}' | head -n1)
+
+    LINE_DB=$(grep "^$MAC " "$DB" 2>/dev/null | head -n1)
+    echo $LINE_DB
+        HOST=$(echo "$LINE_DB" | awk '{print $2}')
+        IP=$(echo "$LINE_DB" | awk '{print $3}')
+
+        [ -z "$HOST" ] && HOST="unknown"
+        [ -z "$IP" ] && IP="unknown"
+
+    # DEBUG sur la console (stdout)
+        echo "DEBUG wifi-log: MAC=$MAC HOST=$HOST IP=$IP IFACE=$IFACE EVENT=$EVENT"
+
+    # Message perso
+    if [ "$EVENT" = "CONNECTED" ]; then
+        msg="Client WiFi connecte: $MAC ($HOST) sur $IFACE $IP"
+    else
+        msg="Client WiFi deconnecte: $MAC ($HOST) sur $IFACE $IP"
+    fi
+    logger -t wifi-client2 $msg
+    chat_id=""
+    token=""
+    #curl -skim 10 --data disable_notification="false" --data parse_mode="MarkdownV2" --data chat_id="$chat_id" --data-urlencode "text=msg" "https://api.telegram.org/bot${token}/sendMessage" > /dev/null
+
+    #send_to_telegram "TEST"
+
+      send_to_telegram "\#$(echo "${hostname}" | sed 's/[^a-zA-Z0-9]//g') ${EVENT}
+    \`\`\`
+    Time: $(date "+%A %d-%b-%Y %T")
+    Hostname: ${HOST}
+    IP Address: ${IP}
+    MAC Address: ${MAC}
+    \`\`\`"
+
+    done
+
