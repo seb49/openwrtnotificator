@@ -164,6 +164,7 @@ Puis
 2. Activer et tester le service
 
    /etc/init.d/wifi-log-daemon enable
+   
    /etc/init.d/wifi-log-daemon start
    
 
