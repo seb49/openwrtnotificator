@@ -1,7 +1,8 @@
 "# openwrtnotificator" 
 
 PreRequis
- - installer curl
+ - installer curl : apk add curl
+ - instller nano : apk add nano
 
 Etape 1 - Configurer un BOT Telegram
 
@@ -45,7 +46,7 @@ Crée le fichier /etc/hotplug.d/dhcp/10-mac-hostname-db avec ce contenu :
 
 Ensuite
 
-    chmod +x /etc/hotplug.d/hostapd/10-wifi-connect-log
+    chmod +x /etc/hotplug.d/dhcp/10-mac-hostname-db
     /etc/init.d/network restart
 
 Warning
