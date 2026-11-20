@@ -65,7 +65,7 @@ Etaps 4 - Ecrire un script qui va lire les logs OpenWrt
         token=""
         if [[ -n "${token}" ]] && [[ -n "${chat_id}" ]]; then
             #curl -okim 10 --data disable_notification="false" --data parse_mode="MarkdownV2" --data chat_id="${chat_id}" --data-urlencode "text=${1}" "https://api.telegram.org/bot${token}/sendMessage" > /dev/null
-            curl -skim 10 --data disable_notification="false" --data parse_mode="MarkdownV2" --data chat_id="" --data-urlencode "text=${1}" "https://api.telegram.org/bot/sendMessage" > /dev/null
+            curl -skim 10 --data disable_notification="false" --data parse_mode="MarkdownV2" --data chat_id="${chat_id}" --data-urlencode "text=${1}" "https://api.telegram.org/bot${token}/sendMessage" > /dev/null
         else
             logger -p local0.info -t dhcp-remove-notify "Error: Your telegram chat_id or token is empty"
         fi
